@@ -56,11 +56,11 @@ function ProjectCard({ p }: { p: Project }) {
         }}
       />
 
-      <div className="p-[1.4rem]">
-        <div className="text-[0.95rem] font-semibold text-[var(--text)] tracking-[-0.01em] mb-2 leading-snug">
+      <div className="p-[1.1rem]">
+        <div className="text-[0.88rem] font-semibold text-[var(--text)] tracking-[-0.01em] mb-2 leading-snug">
           {p.name}
         </div>
-        <div className="text-[0.83rem] text-[var(--text-muted)] leading-relaxed mb-3">
+        <div className="text-[0.78rem] text-[var(--text-muted)] leading-relaxed mb-2">
           {p.desc}
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -81,11 +81,11 @@ function ProjectCard({ p }: { p: Project }) {
 
 export default function Experience() {
   return (
-    <section id="experience" className="max-w-[1100px] mx-auto px-[5%] pt-0 pb-[100px]">
+    <section id="experience" className="max-w-[1100px] mx-auto px-[5%] pt-0 pb-[70px]">
       <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">
         Experience
       </div>
-      <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-[var(--text)] mb-12 tracking-[-0.03em] leading-[1.1]">
+      <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-[var(--text)] mb-6 tracking-[-0.03em] leading-[1.1]">
         工作经历
       </h2>
 
@@ -94,7 +94,7 @@ export default function Experience() {
         <div className="absolute left-0 top-2 bottom-0 w-px bg-gradient-to-b from-[rgba(94,106,210,0.92)] to-transparent" />
 
         {/* Company header */}
-        <div className="relative mb-8 pb-6 border-b border-[var(--border)]">
+        <div className="relative mb-5 pb-6 border-b border-[var(--border)]">
           <div
             className="absolute -left-[2.45rem] top-1.5 w-2.5 h-2.5 rounded-full
               bg-[radial-gradient(circle,rgba(247,248,248,0.96)_0%,rgba(94,106,210,0.94)_55%,rgba(94,106,210,0.18)_100%)]
@@ -111,7 +111,7 @@ export default function Experience() {
         </div>
 
         {/* Projects */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
           {projects.map(p => (
             <ProjectCard key={p.name} p={p} />
           ))}
