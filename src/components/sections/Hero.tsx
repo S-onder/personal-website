@@ -69,39 +69,27 @@ interface SpringState {
   vy: number
 }
 
-interface EchoEntry {
-  x: number
-  y: number
-  ts: number // timestamp when recorded
-}
-
 function HeroRight() {
   const containerRef = useRef<HTMLDivElement>(null)
-
-  // Target mouse pos (raw)
-  const mouseTarget = useRef({ x: -9999, y: -9999 })
-  const isInsideRef = useRef(false)
-
-  // Spring-smoothed cursor position
-  const cursorSpring = useRef<SpringState>({ x: -9999, y: -9999, vx: 0, vy: 0 })
-  // Current rendered cursor position (for mask + circle)
-  const cursorPos = useRef({ x: -9999, y: -9999 })
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const gridLayerRef = useRef<HTMLDivElement>(null)
 
   // Grid parallax spring
   const gridSpring = useRef<SpringState>({ x: 0, y: 0, vx: 0, vy: 0 })
   const gridPos = useRef({ x: 0, y: 0 })
 
-  // Echo trail
-  const echoHistory = useRef<EchoEntry[]>([])
-  const frameCount = useRef(0)
+  const isInsideRef = useRef(false)
+  const mouseTarget = useRef({ x: 0, y: 0 })
 
-  // DOM refs for live style updates (avoid React re-renders)
-  const cursorCircleRef = useRef<HTMLDivElement>(null)
-  const maskLayerRef = useRef<HTMLDivElement>(null)
-  const gridLayerRef = useRef<HTMLDivElement>(null)
-  const echoContainerRef = useRef<HTMLDivElement>(null)
+  // aigc image ref
+  const aigcImg = useRef<HTMLImageElement | null>(null)
+
+  // Pending erase points (mouse positions since last frame)
+  const pendingPoints = useRef<{ x: number; y: number }[]>([])
+  const lastErasePoint = useRef<{ x: number; y: number } | null>(null)
 
   const rafRef = useRef<number | null>(null)
+  const lastTime = useRef<number>(0)
 
   // Spring integration step
   function stepSpring(
@@ -111,7 +99,7 @@ function HeroRight() {
     stiffness: number,
     damping: number
   ): SpringState {
-    const clampedDt = Math.min(dt, 50) / 1000 // seconds, max 50ms
+    const clampedDt = Math.min(dt, 50) / 1000
     const ax = -stiffness * (state.x - target.x) - damping * state.vx
     const ay = -stiffness * (state.y - target.y) - damping * state.vy
     const vx = state.vx + ax * clampedDt
@@ -121,8 +109,81 @@ function HeroRight() {
     return { x, y, vx, vy }
   }
 
-  const lastTime = useRef<number>(0)
-  const ECHO_DURATION = 400 // ms
+  // Draw aigc.png on canvas with cover crop (center-top)
+  const drawAigc = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !aigcImg.current?.complete) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const cw = canvas.width
+    const ch = canvas.height
+    const iw = aigcImg.current.naturalWidth
+    const ih = aigcImg.current.naturalHeight
+    if (!iw || !ih) return
+    // cover: scale to fill, crop center-top
+    const scale = Math.max(cw / iw, ch / ih)
+    const sw = cw / scale
+    const sh = ch / scale
+    const sx = (iw - sw) / 2
+    const sy = 0 // center-top
+    ctx.clearRect(0, 0, cw, ch)
+    ctx.drawImage(aigcImg.current, sx, sy, sw, sh, 0, 0, cw, ch)
+  }, [])
+
+  // Resize canvas to match container
+  const resizeCanvas = useCallback(() => {
+    const container = containerRef.current
+    const canvas = canvasRef.current
+    if (!container || !canvas) return
+    const { width, height } = container.getBoundingClientRect()
+    canvas.width = width
+    canvas.height = height
+    drawAigc()
+  }, [drawAigc])
+
+  // Erase a circle at (x, y) with soft brush
+  function erase(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, radius)
+    grad.addColorStop(0, 'rgba(0,0,0,1)')
+    grad.addColorStop(0.5, 'rgba(0,0,0,0.8)')
+    grad.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.fillStyle = grad
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  // Interpolate between two points with a given step size
+  function interpolate(
+    x0: number, y0: number,
+    x1: number, y1: number,
+    step: number,
+    cb: (x: number, y: number) => void
+  ) {
+    const dx = x1 - x0, dy = y1 - y0
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const steps = Math.max(1, Math.floor(dist / step))
+    for (let i = 0; i <= steps; i++) {
+      cb(x0 + dx * (i / steps), y0 + dy * (i / steps))
+    }
+  }
+
+  useEffect(() => {
+    // Load aigc image
+    const img = new Image()
+    aigcImg.current = img
+    img.onload = () => {
+      resizeCanvas()
+    }
+    img.src = '/aigc.png'
+
+    // ResizeObserver to keep canvas in sync
+    const ro = new ResizeObserver(() => resizeCanvas())
+    if (containerRef.current) ro.observe(containerRef.current)
+
+    return () => ro.disconnect()
+  }, [resizeCanvas])
 
   useEffect(() => {
     const container = containerRef.current
@@ -134,11 +195,12 @@ function HeroRight() {
       const y = e.clientY - rect.top
       mouseTarget.current = { x, y }
       isInsideRef.current = true
+      pendingPoints.current.push({ x, y })
     }
 
     const handleMouseLeave = () => {
       isInsideRef.current = false
-      mouseTarget.current = { x: -9999, y: -9999 }
+      lastErasePoint.current = null
     }
 
     container.addEventListener('mousemove', handleMouseMove)
@@ -147,23 +209,15 @@ function HeroRight() {
     function tick(now: number) {
       const dt = lastTime.current ? now - lastTime.current : 16
       lastTime.current = now
-      frameCount.current += 1
 
-      const target = mouseTarget.current
       const inside = isInsideRef.current
-
-      // ── Cursor spring ──
-      const cs = cursorSpring.current
-      const nextCs = stepSpring(cs, target, dt, 120, 20)
-      cursorSpring.current = nextCs
-      cursorPos.current = { x: nextCs.x, y: nextCs.y }
 
       // ── Grid parallax spring ──
       let gridTarget = { x: 0, y: 0 }
       if (inside && container) {
         const rect = container.getBoundingClientRect()
-        const normX = (target.x / rect.width) * 2 - 1  // -1..1
-        const normY = (target.y / rect.height) * 2 - 1
+        const normX = (mouseTarget.current.x / rect.width) * 2 - 1
+        const normY = (mouseTarget.current.y / rect.height) * 2 - 1
         const maxOffset = 15
         gridTarget = {
           x: Math.max(-maxOffset, Math.min(maxOffset, normX * 0.015 * rect.width)),
@@ -175,67 +229,30 @@ function HeroRight() {
       gridSpring.current = nextGs
       gridPos.current = { x: nextGs.x, y: nextGs.y }
 
-      // ── Echo history recording (every 2 frames) ──
-      if (inside && frameCount.current % 2 === 0) {
-        echoHistory.current.push({ x: nextCs.x, y: nextCs.y, ts: now })
-        // Keep only last 8
-        if (echoHistory.current.length > 8) {
-          echoHistory.current.shift()
-        }
-      }
-      // Purge old echoes
-      echoHistory.current = echoHistory.current.filter(e => now - e.ts < ECHO_DURATION)
-
-      // ── DOM updates ──
-      const cx = cursorPos.current.x
-      const cy = cursorPos.current.y
-
-      // Cursor circle position
-      if (cursorCircleRef.current) {
-        const visible = inside && cx > 0
-        cursorCircleRef.current.style.transform = `translate(${cx - 120}px, ${cy - 120}px)`
-        cursorCircleRef.current.style.opacity = visible ? '1' : '0'
-      }
-
-      // aigc mask: hole at cursor position
-      if (maskLayerRef.current) {
-        const maskStr = inside && cx > 0
-          ? `radial-gradient(circle at ${cx}px ${cy}px, transparent 0px, transparent 180px, black 280px)`
-          : 'none'
-        maskLayerRef.current.style.maskImage = maskStr
-        maskLayerRef.current.style.webkitMaskImage = maskStr
-      }
-
-      // Grid parallax
       if (gridLayerRef.current) {
         gridLayerRef.current.style.transform = `translate(${gridPos.current.x}px, ${gridPos.current.y}px)`
       }
 
-      // Echo circles
-      if (echoContainerRef.current) {
-        const echoes = echoHistory.current
-        // Build innerHTML for echoes
-        let html = ''
-        for (let i = 0; i < echoes.length; i++) {
-          const e = echoes[i]
-          const age = now - e.ts
-          const t = age / ECHO_DURATION // 0 (fresh) → 1 (old)
-          const opacity = (1 - t) * 0.35
-          const diameter = 240 - t * 40 // 240 → 200
-          const radius = diameter / 2
-          html += `<div style="
-            position:absolute;
-            left:0;top:0;
-            width:${diameter}px;
-            height:${diameter}px;
-            border-radius:50%;
-            border:1px solid rgba(255,255,255,0.08);
-            opacity:${opacity};
-            pointer-events:none;
-            transform:translate(${e.x - radius}px,${e.y - radius}px);
-          "></div>`
+      // ── Canvas scratch-off erase ──
+      const canvas = canvasRef.current
+      const points = pendingPoints.current.splice(0)
+      if (canvas && points.length > 0) {
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          for (const pt of points) {
+            if (lastErasePoint.current) {
+              interpolate(
+                lastErasePoint.current.x, lastErasePoint.current.y,
+                pt.x, pt.y,
+                8,
+                (ix, iy) => erase(ctx, ix, iy, 120)
+              )
+            } else {
+              erase(ctx, pt.x, pt.y, 120)
+            }
+            lastErasePoint.current = pt
+          }
         }
-        echoContainerRef.current.innerHTML = html
       }
 
       rafRef.current = requestAnimationFrame(tick)
@@ -252,82 +269,36 @@ function HeroRight() {
 
   return (
     <div ref={containerRef} className="relative flex-[1.1] h-full -ml-16 overflow-hidden">
-      {/* Layer 0: /sjl.jpg — base portrait, slightly darkened */}
+      {/* 底层：真实照片 */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/sjl.jpg"
-        alt=""
-        aria-hidden
+      <img src="/sjl.jpg" alt="" aria-hidden
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ objectFit: 'cover', objectPosition: 'center top', filter: 'brightness(0.7)', zIndex: 0 }}
       />
 
-      {/* Layer 1: /aigc.png — covers base, masked to reveal sjl.jpg at cursor */}
-      <div
-        ref={maskLayerRef}
+      {/* 顶层：canvas（aigc.png + 刮刮卡擦除） */}
+      <canvas ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
         style={{ zIndex: 1 }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/aigc.png"
-          alt=""
-          aria-hidden
-          className="w-full h-full"
-          style={{ objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-        />
-      </div>
+      />
 
-      {/* Layer 2: Fine grid with parallax */}
-      <div
-        ref={gridLayerRef}
-        className="absolute pointer-events-none"
+      {/* 网格视差层 */}
+      <div ref={gridLayerRef} className="absolute pointer-events-none"
         style={{
-          inset: '-20px', // slightly oversized so parallax shift doesn't expose edges
+          inset: '-20px',
           zIndex: 2,
-          backgroundImage: `
-            linear-gradient(rgba(77,142,248,0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(77,142,248,0.06) 1px, transparent 1px)
-          `,
+          backgroundImage: `linear-gradient(rgba(77,142,248,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(77,142,248,0.06) 1px, transparent 1px)`,
           backgroundSize: '40px 40px',
           willChange: 'transform',
         }}
       />
 
-      {/* Layer 3a: Echo residuals container */}
-      <div
-        ref={echoContainerRef}
-        className="absolute inset-0 pointer-events-none"
-        style={{ zIndex: 3 }}
-      />
-
-      {/* Layer 3b: Main cursor tracking circle */}
-      <div
-        ref={cursorCircleRef}
-        className="absolute pointer-events-none"
-        style={{
-          top: 0,
-          left: 0,
-          width: 240,
-          height: 240,
-          borderRadius: '50%',
-          border: '1px solid rgba(255,255,255,0.10)',
-          background: 'none',
-          zIndex: 4,
-          opacity: 0,
-          willChange: 'transform, opacity',
-          transition: 'opacity 0.2s ease',
-        }}
-      />
-
-      {/* Left-edge fade mask */}
-      <div
-        className="absolute left-0 top-0 h-full w-32 z-10 pointer-events-none"
+      {/* 左边缘渐变遮罩 */}
+      <div className="absolute left-0 top-0 h-full w-32 z-10 pointer-events-none"
         style={{ background: 'linear-gradient(to right, #08090a 0%, transparent 100%)' }}
       />
-      {/* Right-edge fade mask */}
-      <div
-        className="absolute right-0 top-0 h-full w-16 z-10 pointer-events-none"
+      {/* 右边缘渐变遮罩 */}
+      <div className="absolute right-0 top-0 h-full w-16 z-10 pointer-events-none"
         style={{ background: 'linear-gradient(to left, #08090a 0%, transparent 100%)' }}
       />
     </div>
