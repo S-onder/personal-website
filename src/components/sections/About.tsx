@@ -72,7 +72,7 @@ export default function About() {
   }, [])
 
   return (
-    <section id="about" className="max-w-[1100px] mx-auto px-[5%] py-[100px]">
+    <section id="about" className="max-w-[1100px] mx-auto px-[5%] py-[70px]">
       <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">About</div>
       <h2 className="section-title text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-[var(--text)] mb-12 tracking-[-0.03em] leading-[1.1]">关于我</h2>
 
@@ -101,25 +101,29 @@ export default function About() {
       </div>
 
       {/* Education sub-section */}
-      <div className="mt-16">
+      <div className="mt-10">
         <div className="flex items-center gap-4 mb-6">
           <span className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] shrink-0">EDUCATION</span>
           <div className="flex-1 h-px bg-[var(--border)]" />
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {education.map(edu => (
             <div
               key={edu.school}
-              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[14px] p-[1.8rem] flex items-stretch gap-6 transition-all duration-300 hover:-translate-y-[3px] hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]"
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[14px] p-[1.1rem_1.5rem] flex items-stretch gap-6 transition-all duration-300 hover:-translate-y-[3px] hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]"
             >
               <div className="flex items-stretch gap-4">
                 <div className="w-[3px] rounded-full bg-[var(--accent1)] self-stretch" />
                 <div className="text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--accent1)] self-center">{edu.degree}</div>
               </div>
-              <div className="flex flex-col justify-center">
-                <div className="text-[1.1rem] font-bold text-[var(--text)] leading-tight">{edu.school}</div>
-                <div className="text-[0.9rem] text-[var(--text-dim)] mt-0.5">{edu.major}</div>
-                <div className="text-[0.8rem] text-[var(--text-muted)] mt-1">{edu.period}</div>
+              <div className="flex-1 flex items-center justify-between gap-4">
+                <div className="flex flex-col justify-center">
+                  <div className="text-[1.1rem] font-bold text-[var(--text)] leading-tight">{edu.school}</div>
+                  <div className="text-[0.9rem] text-[var(--text-dim)] mt-0.5">{edu.major}</div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-[0.8rem] text-[var(--text-muted)]">{edu.period}</div>
+                </div>
               </div>
             </div>
           ))}
