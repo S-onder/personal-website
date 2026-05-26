@@ -36,7 +36,7 @@ function ProjectCard({ p }: { p: Project }) {
 
   return (
     <div
-      className="relative rounded-xl cursor-default"
+      className="relative rounded-xl cursor-default h-full"
       style={{
         border: `1px solid ${hovered ? 'var(--border-hover)' : 'var(--border)'}`,
         backgroundColor: hovered ? 'var(--bg-card-hover)' : 'var(--bg-card)',
@@ -56,11 +56,11 @@ function ProjectCard({ p }: { p: Project }) {
         }}
       />
 
-      <div className="p-[1.1rem]">
+      <div className="p-[1.1rem] flex flex-col h-full">
         <div className="text-[0.88rem] font-semibold text-[var(--text)] tracking-[-0.01em] mb-2 leading-snug">
           {p.name}
         </div>
-        <div className="text-[0.78rem] text-[var(--text-muted)] leading-relaxed mb-2">
+        <div className="text-[0.78rem] text-[var(--text-muted)] leading-relaxed mb-2 flex-1">
           {p.desc}
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -81,7 +81,7 @@ function ProjectCard({ p }: { p: Project }) {
 
 export default function Experience() {
   return (
-    <section id="experience" className="scroll-mt-[64px] max-w-[1100px] mx-auto px-[5%] pt-0 pb-[70px]">
+    <section id="experience" className="scroll-mt-[64px] min-h-[calc(100vh-64px)] max-w-[1100px] mx-auto px-[5%] pt-[48px] pb-[48px] flex flex-col">
       <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">
         Experience
       </div>
@@ -89,7 +89,7 @@ export default function Experience() {
         工作经历
       </h2>
 
-      <div className="relative pl-8">
+      <div className="relative pl-8 flex-1 flex flex-col">
         {/* Timeline line */}
         <div className="absolute left-0 top-2 bottom-0 w-px bg-gradient-to-b from-[rgba(94,106,210,0.92)] to-transparent" />
 
@@ -111,7 +111,7 @@ export default function Experience() {
         </div>
 
         {/* Projects */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+        <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-4">
           {projects.map(p => (
             <ProjectCard key={p.name} p={p} />
           ))}
