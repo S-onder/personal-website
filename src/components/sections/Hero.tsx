@@ -200,7 +200,7 @@ function HeroRight() {
       // aigc mask: hole at cursor position
       if (maskLayerRef.current) {
         const maskStr = inside && cx > 0
-          ? `radial-gradient(circle 120px at ${cx}px ${cy}px, transparent 80px, black 120px)`
+          ? `radial-gradient(circle at ${cx}px ${cy}px, transparent 0px, transparent 180px, black 280px)`
           : 'none'
         maskLayerRef.current.style.maskImage = maskStr
         maskLayerRef.current.style.webkitMaskImage = maskStr
@@ -229,7 +229,7 @@ function HeroRight() {
             width:${diameter}px;
             height:${diameter}px;
             border-radius:50%;
-            border:1px solid rgba(77,142,248,0.5);
+            border:1px solid rgba(255,255,255,0.08);
             opacity:${opacity};
             pointer-events:none;
             transform:translate(${e.x - radius}px,${e.y - radius}px);
@@ -259,7 +259,7 @@ function HeroRight() {
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ objectFit: 'cover', filter: 'brightness(0.7)', zIndex: 0 }}
+        style={{ objectFit: 'cover', objectPosition: 'center top', filter: 'brightness(0.7)', zIndex: 0 }}
       />
 
       {/* Layer 1: /aigc.png — covers base, masked to reveal sjl.jpg at cursor */}
@@ -274,7 +274,7 @@ function HeroRight() {
           alt=""
           aria-hidden
           className="w-full h-full"
-          style={{ objectFit: 'cover', display: 'block' }}
+          style={{ objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
         />
       </div>
 
@@ -311,8 +311,8 @@ function HeroRight() {
           width: 240,
           height: 240,
           borderRadius: '50%',
-          border: '1.5px solid rgba(77,142,248,0.7)',
-          background: 'radial-gradient(circle at center, rgba(77,142,248,0.08) 0%, transparent 70%)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'none',
           zIndex: 4,
           opacity: 0,
           willChange: 'transform, opacity',
