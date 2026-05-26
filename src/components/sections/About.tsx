@@ -1,6 +1,11 @@
 'use client'
 import { useEffect, useRef } from 'react'
 
+const education = [
+  { degree: '硕士', school: '上海对外经贸大学', major: '应用统计专业', period: '2023.09 — 2025.06' },
+  { degree: '学士', school: '南京财经大学', major: '金融数学专业', period: '2018.09 — 2022.06' },
+]
+
 const skills = ['生成式召回','VQ-VAE','双塔模型','LLM+推荐','强化学习','多模态','Scaling Law','用户画像','AI Agent','负采样','特征工程','精排模型','粗排','Python']
 
 const stats = [
@@ -92,6 +97,32 @@ export default function About() {
         </div>
         <div className="grid grid-cols-2 gap-5">
           {stats.map(s => <StatCard key={s.label} {...s} />)}
+        </div>
+      </div>
+
+      {/* Education sub-section */}
+      <div className="mt-16">
+        <div className="flex items-center gap-4 mb-6">
+          <span className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] shrink-0">EDUCATION</span>
+          <div className="flex-1 h-px bg-[var(--border)]" />
+        </div>
+        <div className="flex flex-col gap-4">
+          {education.map(edu => (
+            <div
+              key={edu.school}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[14px] p-[1.8rem] flex items-stretch gap-6 transition-all duration-300 hover:-translate-y-[3px] hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]"
+            >
+              <div className="flex items-stretch gap-4">
+                <div className="w-[3px] rounded-full bg-[var(--accent1)] self-stretch" />
+                <div className="text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--accent1)] self-center">{edu.degree}</div>
+              </div>
+              <div className="flex flex-col justify-center">
+                <div className="text-[1.1rem] font-bold text-[var(--text)] leading-tight">{edu.school}</div>
+                <div className="text-[0.9rem] text-[var(--text-dim)] mt-0.5">{edu.major}</div>
+                <div className="text-[0.8rem] text-[var(--text-muted)] mt-1">{edu.period}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
