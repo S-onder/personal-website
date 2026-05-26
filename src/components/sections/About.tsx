@@ -72,7 +72,7 @@ export default function About() {
   }, [])
 
   return (
-    <section id="about" className="max-w-[1100px] mx-auto px-[5%] py-[70px]">
+    <section id="about" className="scroll-mt-[64px] max-w-[1100px] mx-auto px-[5%] py-[70px]">
       <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">About</div>
       <h2 className="section-title text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-[var(--text)] mb-12 tracking-[-0.03em] leading-[1.1]">关于我</h2>
 

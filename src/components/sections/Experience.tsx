@@ -81,7 +81,7 @@ function ProjectCard({ p }: { p: Project }) {
 
 export default function Experience() {
   return (
-    <section id="experience" className="max-w-[1100px] mx-auto px-[5%] pt-0 pb-[70px]">
+    <section id="experience" className="scroll-mt-[64px] max-w-[1100px] mx-auto px-[5%] pt-0 pb-[70px]">
       <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">
         Experience
       </div>

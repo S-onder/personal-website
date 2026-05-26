@@ -5,7 +5,6 @@ import Link from 'next/link'
 const links = [
   { href: '#about', label: '关于' },
   { href: '#experience', label: '经历' },
-  { href: '#education', label: '教育' },
   { href: '#arxiv', label: 'arXiv 日报' },
 ]
 
@@ -21,7 +20,7 @@ export default function Nav() {
   }, [])
 
   useEffect(() => {
-    const sections = ['about', 'experience', 'education', 'arxiv']
+    const sections = ['about', 'experience', 'arxiv']
     const observer = new IntersectionObserver(
       entries => entries.forEach(e => e.isIntersecting && setActive(e.target.id)),
       { threshold: 0.3 }

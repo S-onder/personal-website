@@ -109,7 +109,7 @@ export default function ArxivSection() {
   const filtered = activeFilter === '全部' ? papers : papers.filter(p => p.tag === activeFilter)
 
   return (
-    <section id="arxiv" className="relative" style={{ padding: 0 }}>
+    <section id="arxiv" className="scroll-mt-[64px] relative" style={{ padding: 0 }}>
       {/* Cover */}
       {covered && (
         <div
