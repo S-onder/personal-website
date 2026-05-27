@@ -69,6 +69,14 @@ interface SpringState {
   vy: number
 }
 
+interface TrailPoint {
+  x: number
+  y: number
+  ts: number
+}
+
+const TRAIL_DURATION = 1000
+
 function HeroRight() {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -84,9 +92,9 @@ function HeroRight() {
   // aigc image ref
   const aigcImg = useRef<HTMLImageElement | null>(null)
 
-  // Pending erase points (mouse positions since last frame)
-  const pendingPoints = useRef<{ x: number; y: number }[]>([])
-  const lastErasePoint = useRef<{ x: number; y: number } | null>(null)
+  // Trail points with timestamps for auto-recover effect
+  const trailPoints = useRef<TrailPoint[]>([])
+  const lastPoint = useRef<{ x: number; y: number } | null>(null)
 
   const rafRef = useRef<number | null>(null)
   const lastTime = useRef<number>(0)
@@ -141,34 +149,6 @@ function HeroRight() {
     drawAigc()
   }, [drawAigc])
 
-  // Erase a circle at (x, y) with soft brush
-  function erase(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, radius)
-    grad.addColorStop(0, 'rgba(0,0,0,1)')
-    grad.addColorStop(0.5, 'rgba(0,0,0,0.8)')
-    grad.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.globalCompositeOperation = 'destination-out'
-    ctx.fillStyle = grad
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  // Interpolate between two points with a given step size
-  function interpolate(
-    x0: number, y0: number,
-    x1: number, y1: number,
-    step: number,
-    cb: (x: number, y: number) => void
-  ) {
-    const dx = x1 - x0, dy = y1 - y0
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    const steps = Math.max(1, Math.floor(dist / step))
-    for (let i = 0; i <= steps; i++) {
-      cb(x0 + dx * (i / steps), y0 + dy * (i / steps))
-    }
-  }
-
   useEffect(() => {
     // Load aigc image
     const img = new Image()
@@ -195,12 +175,33 @@ function HeroRight() {
       const y = e.clientY - rect.top
       mouseTarget.current = { x, y }
       isInsideRef.current = true
-      pendingPoints.current.push({ x, y })
+
+      const now = performance.now()
+      const prev = lastPoint.current
+
+      if (prev) {
+        // Interpolate between last point and current, every 8px
+        const dx = x - prev.x
+        const dy = y - prev.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const steps = Math.max(1, Math.floor(dist / 8))
+        for (let i = 0; i <= steps; i++) {
+          trailPoints.current.push({
+            x: prev.x + dx * (i / steps),
+            y: prev.y + dy * (i / steps),
+            ts: now,
+          })
+        }
+      } else {
+        trailPoints.current.push({ x, y, ts: now })
+      }
+
+      lastPoint.current = { x, y }
     }
 
     const handleMouseLeave = () => {
       isInsideRef.current = false
-      lastErasePoint.current = null
+      lastPoint.current = null
     }
 
     container.addEventListener('mousemove', handleMouseMove)
@@ -233,24 +234,35 @@ function HeroRight() {
         gridLayerRef.current.style.transform = `translate(${gridPos.current.x}px, ${gridPos.current.y}px)`
       }
 
-      // ── Canvas scratch-off erase ──
+      // ── Canvas auto-recover trail effect ──
       const canvas = canvasRef.current
-      const points = pendingPoints.current.splice(0)
-      if (canvas && points.length > 0) {
+      if (canvas) {
         const ctx = canvas.getContext('2d')
         if (ctx) {
-          for (const pt of points) {
-            if (lastErasePoint.current) {
-              interpolate(
-                lastErasePoint.current.x, lastErasePoint.current.y,
-                pt.x, pt.y,
-                8,
-                (ix, iy) => erase(ctx, ix, iy, 120)
-              )
-            } else {
-              erase(ctx, pt.x, pt.y, 120)
+          // 1. Filter out expired trail points
+          trailPoints.current = trailPoints.current.filter(p => now - p.ts < TRAIL_DURATION)
+
+          // 2. Redraw full aigc.png every frame
+          drawAigc()
+
+          // 3. Apply destination-out erase for each trail point with age-based alpha
+          if (trailPoints.current.length > 0) {
+            ctx.save()
+            for (const p of trailPoints.current) {
+              const age = now - p.ts
+              const t = age / TRAIL_DURATION
+              const alpha = 1 - t
+              const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 120)
+              grad.addColorStop(0,   `rgba(0,0,0,${alpha})`)
+              grad.addColorStop(0.5, `rgba(0,0,0,${alpha * 0.8})`)
+              grad.addColorStop(1,   'rgba(0,0,0,0)')
+              ctx.globalCompositeOperation = 'destination-out'
+              ctx.fillStyle = grad
+              ctx.beginPath()
+              ctx.arc(p.x, p.y, 120, 0, Math.PI * 2)
+              ctx.fill()
             }
-            lastErasePoint.current = pt
+            ctx.restore()
           }
         }
       }
@@ -265,7 +277,7 @@ function HeroRight() {
       container.removeEventListener('mouseleave', handleMouseLeave)
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [])
+  }, [drawAigc])
 
   return (
     <div ref={containerRef} className="relative flex-[1.1] h-full -ml-16 overflow-hidden">
