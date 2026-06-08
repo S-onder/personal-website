@@ -15,6 +15,10 @@
 
 html { scroll-behavior: smooth; }
 
+html, body {
+  scroll-padding-top: 96px;
+}
+
 body {
   background: var(--bg-base);
   color: var(--text);

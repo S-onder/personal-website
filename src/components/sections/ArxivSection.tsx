@@ -130,8 +130,11 @@ export default function ArxivSection() {
       <div className={`transition-all duration-700 ${covered ? 'opacity-0 translate-y-8 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
         <div className="max-w-[1100px] mx-auto px-[5%] py-[100px]">
           <div className="mb-8">
-            <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">Daily Papers</div>
-            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-[var(--text)] mb-1 tracking-[-0.03em] leading-[1.1]">arXiv 精选日报</h2>
+            <div className="text-[0.78rem] font-semibold tracking-[0.18em] uppercase text-[var(--accent1)] mb-2">Research Signals</div>
+            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-[var(--text)] mb-3 tracking-[-0.03em] leading-[1.1]">arXiv 精选日报</h2>
+            <p className="max-w-[760px] text-[0.95rem] text-[var(--text-muted)] leading-relaxed mb-3">
+              这里不是独立的论文看板，而是我日常跟踪推荐系统、LLM 与 Agent 前沿进展的研究输入面板，用来连接上面的项目实践与下一步方法判断。
+            </p>
             <div className="text-[0.85rem] text-[var(--text-muted)]">2026-05-24 · 推荐系统 &amp; AI 前沿 · TOP 10</div>
           </div>
 
