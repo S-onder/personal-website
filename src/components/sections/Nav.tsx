@@ -257,13 +257,14 @@ const PillNav = ({
   } as React.CSSProperties
 
   return (
-    <div className="fixed top-[1em] right-0 z-[1000] w-full px-4 md:w-auto md:left-auto md:px-0 md:right-[5%]">
-      <nav
-        className={`ml-auto w-full md:w-max flex items-center justify-between md:justify-start box-border ${className}`}
-        aria-label="Primary"
-        style={cssVars}
-      >
-        <Link
+    <div className="fixed inset-x-0 top-0 z-[1000] flex justify-center px-4 pt-4">
+      <div className="pointer-events-none flex w-full max-w-fit justify-center rounded-full bg-white/70 px-3 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+        <nav
+          className={`pointer-events-auto flex w-full items-center justify-between md:w-max md:justify-start box-border ${className}`}
+          aria-label="Primary"
+          style={cssVars}
+        >
+          <Link
           href="#top"
           aria-label="Home"
           onMouseEnter={handleLogoEnter}
@@ -407,50 +408,51 @@ const PillNav = ({
             style={{ background: 'var(--pill-bg, #fff)' }}
           />
         </button>
-      </nav>
+        </nav>
 
-      <div
-        ref={mobileMenuRef}
-        className="md:hidden absolute top-[3em] left-4 right-4 rounded-[27px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-[998] origin-top"
-        style={{
-          ...cssVars,
-          background: 'var(--base, #f0f0f0)',
-        }}
-      >
-        <ul className="list-none m-0 p-[3px] flex flex-col gap-[3px]">
-          {items.map(item => {
-            const defaultStyle: React.CSSProperties = {
-              background: 'var(--pill-bg, #fff)',
-              color: 'var(--pill-text, #fff)',
-            }
-            const hoverIn = (e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.currentTarget.style.background = 'var(--base)'
-              e.currentTarget.style.color = 'var(--hover-text, #fff)'
-            }
-            const hoverOut = (e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.currentTarget.style.background = 'var(--pill-bg, #fff)'
-              e.currentTarget.style.color = 'var(--pill-text, #fff)'
-            }
+        <div
+          ref={mobileMenuRef}
+          className="pointer-events-auto md:hidden absolute top-[calc(100%+0.5rem)] left-0 right-0 rounded-[27px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-[998] origin-top"
+          style={{
+            ...cssVars,
+            background: 'var(--base, #f0f0f0)',
+          }}
+        >
+          <ul className="list-none m-0 p-[3px] flex flex-col gap-[3px]">
+            {items.map(item => {
+              const defaultStyle: React.CSSProperties = {
+                background: 'var(--pill-bg, #fff)',
+                color: 'var(--pill-text, #fff)',
+              }
+              const hoverIn = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.currentTarget.style.background = 'var(--base)'
+                e.currentTarget.style.color = 'var(--hover-text, #fff)'
+              }
+              const hoverOut = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.currentTarget.style.background = 'var(--pill-bg, #fff)'
+                e.currentTarget.style.color = 'var(--pill-text, #fff)'
+              }
 
-            const linkClasses =
-              'block py-3 px-4 text-[16px] font-medium rounded-[50px] transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)]'
+              const linkClasses =
+                'block py-3 px-4 text-[16px] font-medium rounded-[50px] transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)]'
 
-            return (
-              <li key={item.href}>
-                <a
-                  href={item.href}
-                  className={linkClasses}
-                  style={defaultStyle}
-                  onMouseEnter={hoverIn}
-                  onMouseLeave={hoverOut}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </a>
-              </li>
-            )
-          })}
-        </ul>
+              return (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className={linkClasses}
+                    style={defaultStyle}
+                    onMouseEnter={hoverIn}
+                    onMouseLeave={hoverOut}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       </div>
     </div>
   )
